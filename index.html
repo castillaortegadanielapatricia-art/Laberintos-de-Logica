@@ -1,0 +1,37 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Detectives de la Lógica</title>
+<style>
+body{font-family:Arial;margin:0;background:#101827;color:white}.wrap{max-width:900px;margin:auto;padding:18px}.card{background:#1d293b;border-radius:18px;padding:22px}
+h1{margin:0}.sub{color:#bdc8d8}.top{display:flex;gap:10px;flex-wrap:wrap;margin:15px 0}.badge{background:#2b3b52;padding:9px;border-radius:10px}
+.levels{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}.levels button{padding:9px;border:0;border-radius:9px;background:#394b64;color:white}.levels .done{background:#16805b}.levels .current{outline:3px solid #ffd166}
+.question{font-size:23px;line-height:1.4;margin:25px 0}.options{display:grid;gap:10px}.options button,.next,.restart{padding:14px;border:0;border-radius:11px;font-size:17px;cursor:pointer}.options button{text-align:left}.next{margin-top:15px;background:#f0b429}.restart{margin-top:10px;background:#53657d;color:white}
+.good{color:#5ee391}.bad{color:#ff7777}.progress{height:9px;background:#394b64;margin:15px 0;border-radius:8px}.bar{height:100%;background:#f0b429;width:7%}
+</style></head><body><div class="wrap"><div class="card">
+<h1>🕵️ Detectives de la Lógica</h1><p class="sub">Resuelve los misterios y desbloquea los 15 niveles.</p>
+<div class="top"><span class="badge">⭐ Puntos: <b id="score">0</b></span><span class="badge">🔎 Nivel: <b id="num">1</b>/15</span><span class="badge">🔥 Racha: <b id="streak">0</b></span></div>
+<div class="progress"><div class="bar" id="bar"></div></div><div class="levels" id="levels"></div><div id="game"></div>
+<button class="restart" onclick="resetGame()">↻ Reiniciar</button></div></div>
+<script>
+const Q=[
+["¿Qué número sigue? 2, 4, 8, 16, __",["18","24","32","34"],2,"Cada número se multiplica por 2."],
+["Ana es más alta que Luis. Luis es más alto que Sara. ¿Quién es la más baja?",["Ana","Luis","Sara","No se puede saber"],2,"El orden es Ana > Luis > Sara."],
+["A dice: «La puerta 2 es correcta». B dice: «A miente». Si solo una afirmación es verdadera, ¿qué puerta eliges?",["Puerta 1","Puerta 2","No se puede saber","Ambas"],1,"Si la puerta 2 es correcta, A dice la verdad y B miente."],
+["Completa: ▲, ▲▲, ▲▲▲, __",["▲","▲▲▲▲","▲▲","▲▲▲▲▲"],1,"Aumenta una figura cada vez."],
+["Luna está antes que Max. Max está antes que Toby. ¿Quién está en el medio?",["Luna","Max","Toby","No se sabe"],1,"El orden es Luna → Max → Toby."],
+["Si todos los ZIPS son azules y algunos objetos azules son grandes, ¿qué sabemos con seguridad?",["Todos los ZIPS son grandes","Algunos ZIPS son grandes","Todos los ZIPS son azules","Ningún ZIP es grande"],2,"La única información segura sobre los ZIPS es que son azules."],
+["Código: 3→9, 4→16, 5→25. Entonces 7→?",["28","35","42","49"],3,"Cada número se multiplica por sí mismo."],
+["Hay 5 manzanas. Tomas 2. ¿Cuántas tienes?",["2","3","5","7"],0,"Las dos que tomaste ahora las tienes tú."],
+["¿Cuál NO pertenece? círculo, cuadrado, triángulo, rojo",["círculo","cuadrado","triángulo","rojo"],3,"Tres son figuras; rojo es un color."],
+["Si hoy es miércoles, ¿qué día será dentro de 10 días?",["viernes","sábado","domingo","lunes"],1,"Después de 7 días es miércoles; 3 días más: sábado."],
+["Ana, Beto y Carla tienen perro, gato y pez. Ana no tiene perro. Beto no tiene pez. Carla tiene gato. ¿Qué tiene Ana?",["perro","gato","pez","No se sabe"],2,"Carla tiene gato; Beto no puede tener pez; Ana queda con pez."],
+["¿Qué número falta? 1, 3, 6, 10, __",["12","14","15","16"],2,"Se suma +2, +3, +4, +5."],
+["A pesa más que B y B pesa más que C. ¿Cuál pesa menos?",["A","B","C","Pesan igual"],2,"A > B > C."],
+["Un robot gira derecha, avanza, gira derecha y avanza. Si empieza mirando al norte, ¿hacia dónde termina mirando?",["Norte","Sur","Este","Oeste"],1,"Dos giros a la derecha son 180°: sur."],
+["Misterio final: Caja 1 dice «El premio está en la caja 2». Caja 2 dice «El premio NO está aquí». Caja 3 dice «El premio NO está en la caja 1». Solo una frase es verdadera. ¿Dónde está?",["Caja 1","Caja 2","Caja 3","No se puede determinar"],0,"Si está en la caja 1, solo la frase de la caja 2 es verdadera."]
+];
+let s=JSON.parse(localStorage.getItem("detectives")||'{"u":1,"p":0,"r":0,"d":[]}'),cur=1,answered=false;
+function levels(){levelsHTML="";for(let i=1;i<=15;i++)levelsHTML+=`<button class="${s.d.includes(i)?"done ":""}${cur==i?"current":""}" ${i>s.u?"disabled":""} onclick="load(${i})">${i}${s.d.includes(i)?" ✓":""}</button>`;document.getElementById("levels").innerHTML=levelsHTML}
+function load(n){cur=n;answered=false;levels();document.getElementById("num").textContent=n;document.getElementById("bar").style.width=n/15*100+"%";let q=Q[n-1];document.getElementById("game").innerHTML=`<div class="question">🧩 ${q[0]}</div><div class="options">${q[1].map((x,i)=>`<button onclick="ans(${i})">${String.fromCharCode(65+i)}. ${x}</button>`).join("")}</div><p id="fb"></p>`}
+function ans(i){if(answered)return;answered=true;let q=Q[cur-1],fb=document.getElementById("fb");if(i==q[2]){s.p+=100;s.r++;if(!s.d.includes(cur))s.d.push(cur);if(cur==s.u&&s.u<15)s.u++;fb.className="good";fb.innerHTML="✅ ¡Correcto! "+q[3];if(cur<15)document.getElementById("game").insertAdjacentHTML("beforeend",`<button class="next" onclick="load(${cur+1})">➡️ Siguiente nivel</button>`)}else{s.r=0;fb.className="bad";fb.innerHTML="❌ Aún no. Pista: "+q[3]}document.getElementById("score").textContent=s.p;document.getElementById("streak").textContent=s.r;localStorage.setItem("detectives",JSON.stringify(s));levels()}
+function resetGame(){s={u:1,p:0,r:0,d:[]};localStorage.setItem("detectives",JSON.stringify(s));load(1)}load(1);
+</script></body></html>
